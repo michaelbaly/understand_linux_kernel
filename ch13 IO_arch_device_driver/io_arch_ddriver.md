@@ -1,4 +1,4 @@
-#Chapter 13. I/O Architecture and Device Drivers
+# Chapter 13. I/O Architecture and Device Drivers
 + focus on: how the kernel invokes the operations on actual devices.
 
 ##13.1. I/O Architecture
