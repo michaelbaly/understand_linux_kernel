@@ -175,3 +175,21 @@
 + Minimal support has a limited range of applications, because it cannot be used when the external device must interact heavily with internal kernel data structures.---> 当需要和内核交互的时候此方案不再适用。
 
 ##13.5. Character Device Drivers
+
+###13.5.1. Assigning Device Numbers
++ kernel uses a hash table *chrdevs* --- keep track of assigned device numbers.
++ two methods for assigning a range of device numbers to a character device driver --- whether driver must invoke *cdev_add()*
+
+####13.5.1.1. The register_chrdev_region( ) and alloc_chrdev_region( ) functions --- method1
+
+####13.5.1.2. The register_chrdev( ) function --- method2~driver invoke cdev_add
+
+###13.5.2. Accessing a Character Device Driver
++ *def_chr_fops* table
+
+###13.5.3. Buffering Strategies for Character Devices
++ Some devices are capable of transferring sizeable amounts of data in a single I/O operation, while others transfer only a few characters.
++ to cope with this avalanche of data by combining two different techniques:
+  + Use of DMA to transfer blocks of data. --- 使用DMA进行块数据传输
+  + Use of a circular buffer of two or more elements, each element having the size of a block of data.--- 使用环形缓存
+    + The role of the circular buffer is to smooth out the peaks of CPU load;
