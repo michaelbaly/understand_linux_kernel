@@ -81,3 +81,31 @@
 
 ### 16.2.6. Non-Linear Memory Mappings
 + each memory page maps a random (arbitrary) page of file's data.
+
+
+## 16.3. Direct I/O Transfers
++ Because block hardware devices must be handled through interrupts and Direct Memory Access (DMA), and this can be done only in Kernel Mode, some sort of kernel support is definitely required to implement self-caching applications.---块硬件设备必须通过中断或DMA方式进行处理，而且只能在内核模式进行
++ Linux offers a simple way to bypass the page cache: direct I/O transfers. In each I/O direct transfer, the kernel programs the disk controller to transfer the data directly from/to pages belonging to the User Mode address space of a self-caching application.---linux通过直接内存传输来绕开页表缓存。
++ Disk caches are owned by the kernel, cannot be swapped out, and are visible to all processes in Kernel Mode.---由内核所有的硬盘缓存不能被换出，并且对所有内核模式下的进程都可见。
+
++ direct I/O transfers should move data within *pages*---直接I/O传输在页内移动数据。
++ pages not swapped out while the data transfer is in progress --- 正在进行数据传输的页不能被换出
+
++ When a self-caching application wishes to directly access a file, it opens the file specifying the O_DIRECT flag --- 自缓存应用在访问文件时，指定文件打开标志为*O_DIRECT*,并且可以对已经打开的文件动态设置此标志。
++ In most cases, the direct_IO method is a wrapper for the *_ _blockdev_direct_IO( )* function.
+
+## 16.4. Asynchronous I/O
++ The POSIX 1003.1 standard defines a set of library functions for accessing the files in an *asynchronous* way. "Asynchronous" essentially means that when a User Mode process invokes a library function to read or write a file, the function terminates as soon as the read or write operation has been enqueued, possibly even before the actual I/O data transfer takes place. The calling process can thus continue its execution while the data is being transferred.---支持异步IO的库函数在读写操作已经排队后就终止了。实际的数据传输可能在之后发生。这样调用进程可以在数据传输的同时继续执行。
++ The application can later check the status of the outstanding I/O operation by invoking *aio_error( )*, which returns EINPROGRESS if the data transfer is still in progress, 0 if it is successfully completed, or an error code in case of failure.---应用程序可以调用aio_error来确定数据传输的结果，用于判断后续的执行逻辑。
+
+### 16.4.1. Asynchronous I/O in Linux 2.6
++ this "poor man's" version of the POSIX functions is significantly slower than a version that uses a kernel-level implementation of asynchronous I/O. --- POSIX异步IO库函数相比内核级别的异步IO慢得多
+
+#### 16.4.1.1. The asynchronous I/O context
++ If a User Mode process wants to make use of the io_submit( ) system call to start an asynchronous I/O operation, it must create beforehand an asynchronous I/O context.---在使用系统调用前，先分配异步IO上下文（用于追踪异步IO执行的过程信息）
++ the AIO ring. --- 核心数据结构
+  + The AIO ring is a memory buffer in the address space of the User Mode process that is also accessible by all processes in Kernel Mode. --- 进程地址空间内的内存缓冲区
++ The AIO ring is essentially a circular buffer where the kernel writes the completion reports of the outstanding asynchronous I/O operations. --- AIO ring其实是一个环形缓冲区，内核将异步IO操作的完成状态写入该区域。
+
+#### 16.4.1.2. Submitting the asynchronous I/O operations
++ To start some asynchronous I/O operations, the application invokes the io_submit( ) system call.
